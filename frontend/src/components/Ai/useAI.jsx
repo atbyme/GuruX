@@ -16,7 +16,7 @@ export default function useAI({ onResult, onThinkingStart, onThinkingEnd }) {
       });
 
       const data = await res.json();
-      onResult(data.reply);
+      onResult(data.response);  // <=== fix here
     } catch (err) {
       console.error(err);
       onResult("AI is unavailable right now.");
