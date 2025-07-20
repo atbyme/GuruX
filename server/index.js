@@ -8,8 +8,12 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const corsOptions = {
+  origin: 'https://gurux-rho.vercel.app',
+};
 
-app.use(cors({ origin: process.env.APP_URL }));
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // Health-Check Route
