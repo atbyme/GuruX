@@ -9,7 +9,7 @@ export default function useAI({ onResult, onThinkingStart, onThinkingEnd }) {
     setIsThinking(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/ask', {
+      const res = await fetch('https://gurux-backened.onrender.com/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question }),

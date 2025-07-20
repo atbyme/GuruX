@@ -9,7 +9,7 @@ export default function useAI() {
     setError(null);
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ask`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://gurux-backened.onrender.com'}/api/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, subject, className }),
