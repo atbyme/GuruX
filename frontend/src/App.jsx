@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Ai from './pages/Ai'
 import Dashboard from './pages/Dashboard'
-import ReactPage from './pages/react'  // your component import with new name
+import ReactPage from './pages/React'  // your component import with new name
 
 const App = () => {
     return (
