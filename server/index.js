@@ -8,12 +8,29 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Whitelist of allowed origins (add your frontend URLs here)
+const whitelist = [
+  'https://gurux-rho.vercel.app',
+  'http://localhost:3000', // for local dev
+];
+
+// CORS options with dynamic origin check
 const corsOptions = {
-  origin: 'https://gurux-rho.vercel.app',
+  origin: function (origin, callback) {
+    if (!origin) {
+      // Allow non-browser requests like Postman, curl
+      return callback(null, true);
+    }
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+    }
+  },
 };
 
 app.use(cors(corsOptions));
-
 app.use(express.json());
 
 // Health-Check Route
@@ -21,16 +38,32 @@ app.get('/', (req, res) => {
   res.send('✅ GuruX / KnowledgeFlow AI Server is running.');
 });
 
+// Helper: simple input validation
+function validateString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 // POST /api/ask – Handles both general and GuruX assistant queries
 app.post('/api/ask', async (req, res) => {
   const { message, subject, className, question } = req.body;
   const userInput = question || message;
 
-  if (!userInput || userInput.trim() === '') {
-    return res.status(400).json({ error: 'Message is required' });
+  if (!validateString(userInput)) {
+    return res.status(400).json({ error: 'Message or question is required' });
   }
 
   const isGuruX = !!question;
+
+  // Optional: more validation on subject and className for KnowledgeFlow
+  if (!isGuruX) {
+    if (subject && !validateString(subject)) {
+      return res.status(400).json({ error: 'Invalid subject' });
+    }
+    if (className && !validateString(className)) {
+      return res.status(400).json({ error: 'Invalid className' });
+    }
+  }
+
   const systemPrompt = isGuruX
     ? {
         role: 'system',
@@ -61,8 +94,11 @@ ${userInput}
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${isGuruX ? process.env.OPENROUTER_KEY_GURUX : process.env.OPENROUTER_KEY_KNOWLEDGEFLOW}`,
+          Authorization: `Bearer ${
+            isGuruX ? process.env.OPENROUTER_KEY_GURUX : process.env.OPENROUTER_KEY_KNOWLEDGEFLOW
+          }`,
         },
+        timeout: 15000, // 15 seconds timeout
       }
     );
 
@@ -80,7 +116,7 @@ ${userInput}
 app.post('/api/timeline', async (req, res) => {
   const { subject, className } = req.body;
 
-  if (!subject || !className) {
+  if (!validateString(subject) || !validateString(className)) {
     return res.status(400).json({ error: 'Subject and Class are required' });
   }
 
@@ -100,6 +136,7 @@ Each step should include a title, description, and estimated duration in minutes
           'Content-Type': 'application/json',
           Authorization: `Bearer ${process.env.OPENROUTER_KEY_KNOWLEDGEFLOW}`,
         },
+        timeout: 15000,
       }
     );
 

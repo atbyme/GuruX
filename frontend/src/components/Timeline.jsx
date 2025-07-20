@@ -1,3 +1,4 @@
+// src/components/Timeline.jsx
 import React, { useState, useEffect } from 'react';
 
 export default function Timeline({ steps }) {
