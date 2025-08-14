@@ -38,7 +38,7 @@ const cards = [
     description: "Creative Idea Exchange",
     buttonText: "Visit SparkHub",
     icon: <Lightbulb className="w-10 h-10 text-orange-400" />,
-    link: "/", 
+    link: "/sparkhub", 
     bgGradient: "from-orange-600 to-yellow-400",
   },
 ];
