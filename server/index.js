@@ -9,10 +9,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Whitelist of allowed origins (add your frontend URLs here)
+// Whitelist of allowed origins (frontend URLs)
 const whitelist = [
   'https://gurux-rho.vercel.app',
-  'http://localhost:3000', // for local dev
+  'http://localhost:3000',
+  'http://localhost:5173',
 ];
 
 // CORS options with dynamic origin check
@@ -54,7 +55,6 @@ app.post('/api/ask', async (req, res) => {
 
   const isGuruX = !!question;
 
-  // Optional: more validation on subject and className for KnowledgeFlow
   if (!isGuruX) {
     if (subject && !validateString(subject)) {
       return res.status(400).json({ error: 'Invalid subject' });
@@ -74,11 +74,7 @@ app.post('/api/ask', async (req, res) => {
 
   const prompt = isGuruX
     ? userInput
-    : `
-${subject ? `Subject: ${subject}\n` : ''}
-${className ? `Class: ${className}\n` : ''}
-${userInput}
-`;
+    : `Subject: ${subject || ''}\nClass: ${className || ''}\n${userInput}`;
 
   try {
     const response = await axios.post(
@@ -98,7 +94,7 @@ ${userInput}
             isGuruX ? process.env.OPENROUTER_KEY_GURUX : process.env.OPENROUTER_KEY_KNOWLEDGEFLOW
           }`,
         },
-        timeout: 15000, // 15 seconds timeout
+        timeout: 15000,
       }
     );
 
@@ -162,6 +158,51 @@ Each step should include a title, description, and estimated duration in minutes
     console.error('❌ OpenRouter API timeline error:', error.response?.data || error.message);
     res.status(500).json({
       error: 'Failed to generate timeline. Please try again later.',
+    });
+  }
+});
+
+// POST /api/sparkhub – Idea feedback and suggestions
+app.post('/api/sparkhub', async (req, res) => {
+  const { idea } = req.body;
+
+  if (!validateString(idea)) {
+    return res.status(400).json({ error: 'Idea is required' });
+  }
+
+  try {
+    const response = await axios.post(
+      'https://openrouter.ai/api/v1/chat/completions',
+      {
+        model: 'mistralai/mixtral-8x7b-instruct',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a creative and practical assistant. When a user shares an idea, give brief and helpful feedback, suggestions, or inspiration related to that idea. Give in approx 6-7 points nice.',
+          },
+          {
+            role: 'user',
+            content: `Here’s an idea: "${idea}". What do you think about it?`,
+          },
+        ],
+        stream: false,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.OPENROUTER_KEY_GURUX}`,
+        },
+        timeout: 15000,
+      }
+    );
+
+    const reply = response.data?.choices?.[0]?.message?.content || 'No insight generated.';
+    res.json({ reply });
+  } catch (error) {
+    console.error('❌ OpenRouter API error (SparkHub):', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Failed to generate insight from AI. Please try again later.',
     });
   }
 });
